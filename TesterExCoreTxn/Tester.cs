@@ -12,27 +12,28 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ComponentFactory.Krypton.Toolkit;
+using CsvHelper;
 using OpcenterWikLibrary;
 
 namespace TesterExCoreTxn
 {
     public partial class Tester : KryptonForm
     {
-        private List<string> collectionMessage = new List<string>();
+        private List<FormatLogger> collectionMessage = new List<FormatLogger>();
         public Tester()
         {
             InitializeComponent();
             this.Palette = MyPalette;
             AddVersionNumber();
         }
-        private string LogGenerator(string sMessage)
+        private string LogGenerator(string sMessage, string status)
         {
-            return $"[{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}] {sMessage}";
+            collectionMessage.Add(new FormatLogger() { Timestamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture), Message = sMessage, Status = status });
+            return $"[{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}] {sMessage} {status}";
         }
         private void AddLogs(string sMessage)
         {
             Lb_Logs.Items.Add(sMessage);
-            collectionMessage.Add(sMessage);
             Lb_Logs.TopIndex = Lb_Logs.Items.Count - 1;
         }
         private void AddVersionNumber()
@@ -45,21 +46,21 @@ namespace TesterExCoreTxn
 
         private void Bt_Start_Click(object sender, EventArgs e)
         {
-            AddLogs(LogGenerator($"Success Start at LS"));
-            AddLogs(LogGenerator($"Success MoveIn at LS"));
-            AddLogs(LogGenerator($"Success MoveOut at LS"));
-            AddLogs(LogGenerator($"Success MoveIn at PPA"));
-            AddLogs(LogGenerator($"Success MoveOut at PPA"));
-            AddLogs(LogGenerator($"Success MoveIn at HP"));
-            AddLogs(LogGenerator($"Success MoveOut at HP"));
-            AddLogs(LogGenerator($"Success MoveIn at FT"));
-            AddLogs(LogGenerator($"Success MoveOut at FT"));
-            AddLogs(LogGenerator($"Success MoveIn at VC"));
-            AddLogs(LogGenerator($"Success MoveOut at VC"));
-            AddLogs(LogGenerator($"Success MoveIn at W"));
-            AddLogs(LogGenerator($"Success MoveOut at W"));
-            AddLogs(LogGenerator($"Success MoveIn at BE"));
-            AddLogs(LogGenerator($"Success MoveOut at BE"));
+            AddLogs(LogGenerator($"Success Start at LS", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at LS", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at LS", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at PPA", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at PPA", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at HP", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at HP", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at FT", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at FT", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at VC", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at VC", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at W", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at W", "success"));
+            AddLogs(LogGenerator($"Success MoveIn at BE", "success"));
+            AddLogs(LogGenerator($"Success MoveOut at BE", "success"));
             generateFileReport("D:\\3. OPCENTER\\Opcenter 8.6 & MIO 4.0\\Document from Kenneth\\logs", this.collectionMessage);
         }
 
@@ -70,7 +71,7 @@ namespace TesterExCoreTxn
         }
 
 
-        public void generateFileReport(string locationFolder, List<string> messages)
+        public void generateFileReport(string locationFolder, List<FormatLogger> loggerObjects)
         {
             StreamWriter oFile = null;
             Directory.CreateDirectory(locationFolder);
@@ -78,11 +79,11 @@ namespace TesterExCoreTxn
             {
                 try
                 {
-                    string sDestinationFileName = locationFolder + "\\" + $"LogFile-{DateTime.Now.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds}.log";
-                    oFile = new StreamWriter(sDestinationFileName);
-                    foreach (var msg in messages)
+                    string sDestinationFileName = locationFolder + "\\" + $"LogFile-{DateTime.Now.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds}.csv";
+                    using ( oFile = new StreamWriter(sDestinationFileName))
+                    using (var csv = new CsvWriter(oFile, CultureInfo.InvariantCulture))
                     {
-                        oFile.WriteLine(msg);
+                        csv.WriteRecords(loggerObjects);
                     }
                 }
                 catch (Exception ex)
